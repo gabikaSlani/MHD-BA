@@ -1,0 +1,241 @@
+swagger: "2.0"
+info:
+  description: ""
+  version: "1.0.0"
+  title: ""
+basePath: "/api"
+schemes:
+  - "https"
+  - "http"
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /getAllRoutes:
+    get:
+      description: ""
+      consumes: []
+      responses:
+        200:
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Route'
+  /getAllStops:
+    get:
+      description: ""
+      consumes: []
+      responses:
+        200:
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Stop'
+  /findPaths:
+    post:
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/FindPathParameters'
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Card'
+definitions:
+  Route:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      routeInfo:
+        $ref: '#/definitions/RouteInfo'
+      stops:
+        type: "array"
+        items:
+          $ref: '#/definitions/Stop'
+  Stop:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        $ref: '#/definitions/StopName'
+      coords:
+        $ref: '#/definitions/Coords'
+      onRequest:
+        type: "boolean"
+      zone:
+        type: "integer"
+        enum:
+          - 100
+          - 101
+      routes:
+        type: "array"
+        items:
+          $ref: '#/definitions/RouteInfo'
+  StopName:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+  RouteInfo:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      mode:
+        type: "string"
+        enum:
+          - "tramway"
+          - "trolleybus"
+          - "bus"
+  Coords:
+    type: "object"
+    properties:
+      lat:
+        type: "string"
+      lng:
+        type: "string"
+  TripStop:
+    type: "object"
+    properties:
+      name:
+        $ref: '#/definitions/StopName'
+      onRequest:
+        type: "boolean"
+      zone:
+        type: "integer"
+        enum:
+          - 100
+          - 101
+      departureTime:
+        type: "string"
+  TripSegment:
+    type: "object"
+    properties:
+      delay:
+        type: "integer"
+      lowFloor:
+        type: "boolean"
+      routeInfo:
+        $ref: '#/definitions/RouteInfo'
+      tripStops:
+        type: "array"
+        items:
+          $ref: '#/definitions/TripStop'
+      finalStop:
+        $ref: '#/definitions/StopName'
+  Action:
+    type: "object"
+    properties:
+      type:
+        type: "string"
+        enum:
+          - "trip"
+          - "walking"
+      walkingTime:
+        type: "integer"
+      trip:
+        $ref: '#/definitions/TripSegment'
+  Card:
+    type: "object"
+    properties:
+      startStop:
+        $ref: '#/definitions/StopName'
+      endStop:
+        $ref: '#/definitions/StopName'
+      duration:
+        type: "integer"
+      distance:
+        type: "integer"
+      date:
+        type: "string"
+      actions:
+        type: "array"
+        items:
+          $ref: '#/definitions/Action'
+  StartPoint:
+    type: "object"
+    properties:
+      stopId:
+        type: "integer"
+      coords:
+        $ref: '#/definitions/Coords'
+  FindPathParameters:
+    type: "object"
+    properties:
+      from:
+        $ref: '#/definitions/StartPoint'
+      to:
+        type: "integer"
+      time:
+        type: "number"
+      number:
+        type: "integer"
+      maxNumberOfTransfers:
+        type: "integer"
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          - 9
+      maxTimeOfWalking:
+        type: "integer"
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 10
+          - 12
+          - 15
+          - 20
+          - 25
+          - 30
+          - 45
+          - 60
+      minTimeForTransfer:
+        type: "integer"
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 10
+          - 12
+          - 15
+          - 20
+      onlyLowFloor:
+        type: "boolean"
+
+
+
+
+
+
