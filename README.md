@@ -1,9 +1,9 @@
-#MHD BA
+# MHD BA
 
 Aplikácia MHD-BA slúži na plánovanie ciest v MHD Bratislava. 
 Pri hľadaní ciest prihliada na meškanie vozidiel a používateľské preferencie a ponúka používateľom alternatívne cesty.
 
-##Intalačná príručka
+## Intalačná príručka
 
 Aplikácia potrebuje pre svoj beh dáta statických cestovných poriadkov vo formáte GTFS a dáta o meškaní vozidiel.
 Tieto dáta je potrebné vložiť do priečinka `api/src/main/resources`. 
@@ -22,13 +22,13 @@ Cesty sú definované v súbore `/src/main/resources/application.properties`.
 
 `data-resources-pattern=classpath:data/`
 
-###Dátová štrutúra
+### Dátová štrutúra
 Dátová štruktúra sa inicializuje a napĺňa dátami viac ako 20 minút v závislosti od výkonnosti servera. 
 Po jej nainicializovaní a naplnení je serializovaná do súboru.
 Ak existuje serializovaná dátová štruktúra v projekte, pri spustení sa bude vytvárať deserializáciou zo súboru. 
 V projekte je už serializovaná dátová štruktúra pre dáta statických cestovných poriadkov z roku 2018.
 
-###Databáza
+### Databáza
 Ďalej treba na serveri vytvoriť PostgreSQL databázu a naplniť ju dátami zo súborov. 
 Do databázy sa ukladajú statické dáta pre aplikáciu. 
 Predvolený názov databázy, používateľ a heslo do databázy je nastavené v `application.properties`.
@@ -51,7 +51,7 @@ Import môže trvať viac ako 20 minút. Po vypísaní hlášky
 
 Hodnotu `spring.jpa.hibernate.ddl-auto` môžeme nastaviť na `validate`, aby ďalšie spustenie aplikácie nepremazalo všetky dáta v databáze a nemuseli sme importovať dáta znovu.
 
-###Spustenie klientskej strany
+### Spustenie klientskej strany
 Pri prvotnom sputení treba nainštalovať všetky potrebné závislosti príkazom `npm install` (v priečinku `web`).
 Po nainštalovaní potrebných závislostí, je spustíme klientskú aplikáciu príkazov `npm run serve --fix`.
 Vypíše sa port, na ktorom aplikácie beží.
