@@ -2,4 +2,4 @@
 *.iml
 api/target
 data-service/target
-
+web/target

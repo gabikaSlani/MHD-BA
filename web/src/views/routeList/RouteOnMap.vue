@@ -67,10 +67,7 @@ export default {
   },
   methods: {
     back() {
-      this.$router.push({
-        name: 'route-details',
-        params: { route: this.route },
-      });
+      this.$router.back();
     },
     twoPointsCenter(point1, point2) {
       return { lat: (point1.lat + point2.lat) / 2, lng: (point1.lng + point2.lng) / 2 };

@@ -7,18 +7,21 @@
           <div class="wrapper-card-header-row">
             <div>{{card.startStop.name}}</div>
             <div class="spacer"></div>
-            <div>{{card.duration}} min</div>
+            <div>{{card.date}}</div>
           </div>
           <div class="wrapper-card-header-row">
             <div>{{card.endStop.name}}</div>
             <div class="spacer"></div>
-            <div>{{card.distance}} km</div>
+            <div>{{card.duration}} min</div>
           </div>
         </div>
         <div class="wrapper-card-body">
           <ActionDetail v-for="(action, index) of card.actions"
                         v-bind:key="index"
-                        :action="action">
+                        :first="index === 0"
+                        :last="index === card.actions.length - 1"
+                        :action="action"
+                        :card="card">
           </ActionDetail>
         </div>
       </div>
@@ -79,7 +82,7 @@ export default {
     background-color: #e6e8e6;
     border: #13293d 2px solid;
     border-top: none;
-    padding: 15px 8px;
+    padding: 8px 8px;
   }
 
 </style>

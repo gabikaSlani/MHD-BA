@@ -1,5 +1,5 @@
 <template>
-  <input :type="type" :value="value"
+  <input :type="type" :value="value" ref="input"
          @input="updateValue($event.target.value)"
          :placeholder="placeholder"/>
 </template>

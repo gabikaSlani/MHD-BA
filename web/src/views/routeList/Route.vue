@@ -8,10 +8,10 @@
       {{modeName()}}
       {{route.routeInfo.name}}
     </div>
-    <div class="row2" v-if="route.stops && route.stops.length >= 2">
-      {{route.stops[0].name.name}}
+    <div class="row2">
+      {{route.startStopName.name}}
       <img src="/assets/double_arrow.png" alt="double-arrow" class="double-arrow"/>
-      {{route.stops[route.stops.length-1].name.name}}
+      {{route.endStopName.name}}
     </div>
   </div>
 </template>
@@ -59,7 +59,7 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 6px 14px;
+    padding: 6px 15px;
   }
 
   .row1 {
@@ -70,8 +70,9 @@ export default {
   .row2 {
     font-size: 19px;
     display: flex;
-    justify-content: center;
+    justify-content: left;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .mode-img {

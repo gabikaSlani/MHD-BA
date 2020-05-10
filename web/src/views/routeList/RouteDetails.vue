@@ -1,8 +1,9 @@
 <template>
   <div>
+    <Loader v-if="loading"></Loader>
     <Header title="Detail linky"/>
     <ViewBody :tight="true">
-      <div class="card">
+      <div class="card" v-if="route">
         <div class="card-header">
           <div>{{buildModeName(route.routeInfo.mode)}} {{route.routeInfo.name}}</div>
           <div class="spacer"></div>
@@ -39,21 +40,31 @@
 <script>
 import Header from '../../components/containers/Header.vue';
 import ViewBody from '../../components/containers/ViewBody.vue';
+import Loader from '../../components/Loader.vue';
 
 export default {
   name: 'RouteDetails',
   components: {
-    Header, ViewBody,
+    Loader, Header, ViewBody,
   },
-  props: {
-    route: {
-      type: Object,
-    },
+  data() {
+    return {
+      route: undefined,
+      loading: false,
+    };
   },
   mounted() {
-    if (this.route === undefined) {
+    if (this.$route.params === undefined || this.$route.params.id === undefined) {
       this.$router.push('/route-list');
     }
+    this.loading = true;
+    this.$store.dispatch('fetchRouteWithId', this.$route.params.id).then((response) => {
+      this.route = response.data;
+      this.loading = false;
+    }).catch(() => {
+      this.$router.push('/route-list');
+      this.loading = false;
+    });
   },
   methods: {
     buildModeName(modeCode) {

@@ -1,11 +1,12 @@
 <template>
   <div id="app">
-    <router-view/>
+    <PreFetcher :methods="['fetchActualDateTime']">
+      <router-view/>
+    </PreFetcher>
   </div>
 </template>
 
 <style lang="scss">
-
   html, body {
     margin: 0;
     padding: 0;
@@ -24,3 +25,10 @@
     flex-direction: column;
   }
 </style>
+<script>
+import PreFetcher from './components/PreFetcher.vue';
+
+export default {
+  components: { PreFetcher },
+};
+</script>

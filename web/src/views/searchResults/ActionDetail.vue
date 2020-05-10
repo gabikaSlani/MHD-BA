@@ -2,7 +2,26 @@
   <div class="action">
     <div v-if="action.type === 'walking'" class="walking-action">
       <img src="/assets/walking.png" class="walking-img"/>
-      Presun {{action.walkingTime}} min
+      <div v-if="first && last" class="stops-info">
+        <div class="stop-info">
+          {{action.startStop.name}}
+          <div class="spacer"></div>
+          <strong class="left-padding">{{card.departureTime}}</strong>
+        </div>
+        <div class="stop-info">
+          {{action.endStop.name}}
+          <div class="spacer"></div>
+          <strong class="left-padding">{{card.arrivalTime}}</strong>
+        </div>
+      </div>
+      <template v-if="!(first && last)">
+        <template v-if="first && action.startStop !== undefined">{{action.startStop.name}} &rarr;
+        </template>
+        <template v-if="first && action.startStop === undefined">Aktuálna lokalita &rarr;&nbsp;
+        </template>
+        <template class="walking">presun {{action.walkingTime}} min</template>
+        <template v-if="last"> &rarr; {{action.endStop.name}}</template>
+      </template>
     </div>
     <div v-if="action.type === 'trip'" class="trip-action">
       <div class="trip-action-header">
@@ -13,13 +32,15 @@
           {{action.trip.routeInfo.name}}
         </div>
         <img :src="tripImageUrl()" class="trip-image"/>
-        <img src="/assets/handicap.png" v-if="action.trip.lowStoried" class="handicap-image"/>
+        <img src="/assets/handicap.png" v-if="action.trip.lowFloor" class="handicap-image"/>
         <div class="spacer"></div>
         <div class="delay" v-if="action.type === 'trip' && action.trip">
-          <span v-if="!action.trip.delay || action.trip.delay === 0" class="green bold">včas</span>
-          <span v-if="action.trip.delay > 0" class="red bold">
-          meškanie {{action.trip.delay}} min.
-        </span>
+          <span v-if="action.trip.delay === 0 && action.trip.leftTheOriginStop === true"
+                class="green bold">včas</span>
+          <span v-if="action.trip.delay > 0 && action.trip.leftTheOriginStop === true"
+                class="red bold">
+            meškanie {{action.trip.delay}} min
+          </span>
         </div>
       </div>
       <div class="trip-action-body">
@@ -30,7 +51,7 @@
           <div>{{stop.name.name}}</div>
           <div class="spacer"></div>
           <img src="/assets/hand.png" v-if="stop.onRequest" class="on-sign-img"/>
-          <div class="left-margin">{{stop.zone}}</div>
+          <div class="left-margin zone">{{stop.zone}}</div>
           <div class="left-margin">{{stop.departureTime}}</div>
         </div>
         <div class="final-stop">
@@ -45,8 +66,19 @@
 export default {
   name: 'ActionDetail',
   props: {
+    card: {
+      type: Object,
+    },
     action: {
       type: Object,
+    },
+    first: {
+      type: Boolean,
+      default: false,
+    },
+    last: {
+      type: Boolean,
+      default: false,
     },
   },
   methods: {
@@ -77,7 +109,7 @@ export default {
 
   .walking-action {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 16px;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -87,6 +119,10 @@ export default {
   .walking-img {
     height: 28px;
     margin-right: 10px;
+  }
+
+  .walking {
+    margin: 0 3px;
   }
 
   .trip-action {
@@ -113,6 +149,15 @@ export default {
     margin-right: 8px;
   }
 
+  .stops-info {
+    flex: 1;
+    text-align: left;
+  }
+
+  .stop-info {
+    display: flex;
+  }
+
   .handicap-image {
     height: 15px;
   }
@@ -126,17 +171,18 @@ export default {
     display: flex;
     flex-direction: row;
     align-items: center;
-    font-size: 18px;
-    padding: 5px 0;
+    font-size: 16px;
+    padding: 3px 0;
   }
 
   .final-stop {
     padding: 3px 0 3px 12px;
-    font-size: 18px;
+    font-size: 16px;
+    font-style: italic;
   }
 
   .on-sign-img {
-    height: 18px;
+    height: 16px;
   }
 
   .left-margin {
@@ -161,5 +207,9 @@ export default {
 
   .bold {
     font-weight: bold;
+  }
+
+  .zone {
+    font-weight: normal;
   }
 </style>

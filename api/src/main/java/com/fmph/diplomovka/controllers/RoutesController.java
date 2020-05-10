@@ -15,15 +15,15 @@ import java.util.List;
 @RequestMapping("/api")
 public class RoutesController implements GetAllRoutesApi {
 
-    private final RouteService routeService;
+  private final RouteService routeService;
 
-    public RoutesController(RouteService routeService) {
-        this.routeService = routeService;
-    }
+  public RoutesController(RouteService routeService) {
+    this.routeService = routeService;
+  }
 
 
-    @Override
-    public ResponseEntity<List<RouteDom>> getAllRoutesGet() {
-        return ResponseEntity.ok(routeService.getAllRoutes());
-    }
+  @Override
+  public ResponseEntity<List<RouteDom>> getAllRoutesGet() {
+    return ResponseEntity.ok(routeService.getAllRoutes());
+  }
 }

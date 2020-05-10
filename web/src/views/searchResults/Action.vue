@@ -8,35 +8,57 @@
                       blue: action.trip.routeInfo.mode === 'bus',
                       green: action.trip.routeInfo.mode === 'trolleybus'}">
           {{action.trip.routeInfo.name}}
+          <div v-if="action.trip.lowFloor === true" class="row-image-wrapper1">
+            <img src="/assets/handicap.png" alt="lowFloor" class="lowstoried-image"/>
+          </div>
         </div>
         <img src="/assets/walking.png" v-if="action.type === 'walking'" class="row1-image"/>
       </div>
       <div v-if="action.type === 'trip'" class="stops-info">
         <div class="stop-info">
-          {{action.trip.tripStops[0].name.name}}
+          {{action.startStop.name}}
           <div class="spacer"></div>
-          {{action.trip.tripStops[0].departureTime}}
+          <strong class="left-padding"
+                  :class="{red: action.trip.leftTheOriginStop === true && action.trip.delay > 0,
+                           green: action.trip.leftTheOriginStop === true && action.trip.delay === 0
+                  }">
+            {{action.trip.boardingTime}}
+          </strong>
         </div>
         <div class="stop-info">
-          {{action.trip.tripStops[action.trip.tripStops.length-1].name.name}}
+          {{action.endStop.name}}
           <div class="spacer"></div>
-          {{action.trip.tripStops[action.trip.tripStops.length-1].departureTime}}
+          <strong class="left-padding"
+                  :class="{red: action.trip.leftTheOriginStop === true && action.trip.delay > 0,
+                           green: action.trip.leftTheOriginStop === true && action.trip.delay === 0
+                  }">
+            {{action.trip.getOffTime}}
+          </strong>
         </div>
       </div>
-      <div v-if="action.type === 'walking'">
-        Presun {{action.walkingTime}} min.
-      </div>
-    </div>
-    <div class="row2" v-if="action.type === 'trip'">
-      <div class="row-image-wrapper">
-        <img src="/assets/handicap.png" alt="lowStoried" v-if="action.trip.lowStoried"
-             class="lowstoried-image"/>
-      </div>
-      <div class="delay" v-if="action.type === 'trip' && action.trip">
-        <span v-if="!action.trip.delay || action.trip.delay === 0" class="green bold">včas</span>
-        <span v-if="action.trip.delay > 0" class="red bold">
-          meškanie {{action.trip.delay}} min.
-        </span>
+      <div v-if="action.type === 'walking'" class="walking-section">
+        <div v-if="first && last" class="stops-info">
+          <div class="stop-info">
+            {{action.startStop.name}}
+            <div class="spacer"></div>
+            <strong class="left-padding">{{card.departureTime}}</strong>
+          </div>
+          <div class="stop-info">
+            {{action.endStop.name}}
+            <div class="spacer"></div>
+            <strong class="left-padding">{{card.arrivalTime}}</strong>
+          </div>
+        </div>
+        <template v-if="!first || !last">
+          <template v-if="first && action.startStop != null">{{action.startStop.name}}
+            &rarr; </template>
+          <template v-if="first && action.startStop == null">Aktuálna lokalita &rarr; </template>
+          <template class="walking">{{action.walkingTime}} min</template>
+          <template v-if="last"> &rarr; {{action.endStop.name}}</template>
+          <span class="spacer" v-if="last || first"></span>
+          <strong v-if="first" class="left-padding">{{card.departureTime}}</strong>
+          <strong v-if="last" class="left-padding">{{card.arrivalTime}}</strong>
+        </template>
       </div>
     </div>
   </div>
@@ -46,8 +68,19 @@
 export default {
   name: 'Action',
   props: {
+    card: {
+      type: Object,
+    },
     action: {
       type: Object,
+    },
+    first: {
+      type: Boolean,
+      default: false,
+    },
+    last: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {
@@ -74,24 +107,39 @@ export default {
 
   .action {
     width: 100%;
-    font-size: 17px;
+    font-size: 16px;
     padding-bottom: 7px;
+  }
+
+  .walking-section {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    text-align: left;
+  }
+
+  .walking {
+    margin: 0 3px;
   }
 
   .row1 {
     display: flex;
     flex-direction: row;
-    padding: 7px 12px 0 0;
-  }
-
-  .row2 {
-    display: flex;
-    flex-direction: row;
+    padding: 7px 10px 0 0;
   }
 
   .row-image-wrapper {
-    width: 70px;
-    display: flex;
+       width: 55px;
+       display: flex;
+       align-items: center;
+       flex-direction: column;
+       justify-content: center;
+     }
+
+  .row-image-wrapper1 {
+    width: 50px;
+    display: inline;
     align-items: center;
     flex-direction: column;
     justify-content: center;
@@ -102,11 +150,12 @@ export default {
   }
 
   .lowstoried-image {
-    height: 15px;
+    height: 12px;
   }
 
   .stops-info {
     flex: 1;
+    text-align: left;
   }
 
   .stop-info {
@@ -135,5 +184,9 @@ export default {
 
   .bold {
     font-weight: bold;
+  }
+
+  .left-padding{
+    padding-left: 10px;
   }
 </style>

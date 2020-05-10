@@ -1,125 +1,68 @@
 package com.fmph.diplomovka.raptor.dataStructure;
 
-import com.fmph.diplomovka.model.*;
-import com.fmph.diplomovka.service.RouteDataService;
-import com.fmph.diplomovka.service.StopDataService;
+import com.fmph.diplomovka.importdata.LoadService;
+import com.fmph.diplomovka.model.CalendarDate;
+import com.fmph.diplomovka.model.FootPath;
+import com.fmph.diplomovka.model.Route;
+import com.fmph.diplomovka.model.Stop;
+import com.fmph.diplomovka.model.Trip;
+import com.fmph.diplomovka.raptor.dataStructure.models.Subroute;
+import com.fmph.diplomovka.raptor.dataStructure.models.Transfer;
+import com.fmph.diplomovka.service.CalendarDateDataService;
+import com.fmph.diplomovka.service.FootPathDataService;
+import com.fmph.diplomovka.service.StopAreaDataService;
 import com.fmph.diplomovka.service.TripDataService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.stereotype.Service;
 
 
 @Service
 public class DataStructureService {
 
-    private final StopDataService stopDataService;
-    private final RouteDataService routeDataService;
-    private final TripDataService tripDataService;
+  private final FootPathDataService footPathDataService;
+  private final TripDataService tripDataService;
+  private final CalendarDateDataService calendarDateDataService;
+  private final LoadService loadService;
+  private final StopAreaDataService stopAreaDataService;
+  private final DataStructureFiller dataStructureFiller;
 
-    public DataStructureService(StopDataService stopDataService, RouteDataService routeDataService, TripDataService tripDataService) {
-        this.stopDataService = stopDataService;
-        this.routeDataService = routeDataService;
-        this.tripDataService = tripDataService;
-    }
+  public DataStructureService(FootPathDataService footPathDataService,
+      TripDataService tripDataService, CalendarDateDataService calendarDateDataService,
+      LoadService loadService, StopAreaDataService stopAreaDataService,
+      DataStructureFiller dataStructureFiller) {
+    this.footPathDataService = footPathDataService;
+    this.tripDataService = tripDataService;
+    this.calendarDateDataService = calendarDateDataService;
+    this.loadService = loadService;
+    this.stopAreaDataService = stopAreaDataService;
+    this.dataStructureFiller = dataStructureFiller;
+  }
 
-    @Transactional
-    public DataStructureModel createDataStructure() {
-        List<TimeObject> stopTimes = new ArrayList<>();
-        Map<Long, Integer[]> routes = new HashMap<>();
-        List<Stop> routeStops = new ArrayList<>();
-        List<Integer> transfers = new ArrayList<>();
-        Map<Long, Integer[]> stops = new HashMap<>();
-        List<Route> stopRoutes = new ArrayList<>();
-        fillDataStructure(stopTimes, routes, routeStops);
-        fillDataStructureWithTransfers(transfers, stops, stopRoutes);
-        return new DataStructureModel(stopTimes, routes, routeStops, transfers, stops, stopRoutes);
-    }
+  public DataStructureModel createDataStructure() {
+    Map<Route, List<Subroute>> routeSubroutes = new HashMap<>();
+    Map<Long, List<Transfer>> stopTransfers = new HashMap<>();
+    Map<Stop, List<String>> stopSubroutes = new HashMap<>();
+    Map<String, Map<Long, Integer>> stopIndexInSubroute = new HashMap<>();
+    Map<String, Subroute> subroutesByIndex = new HashMap<>();
+    importDataFromGTFS();
+    List<Trip> allTrips = loadService.getAllTrips();
+    List<FootPath> allFootPaths = loadService.getAllFootPaths();
+    List<Stop> allStops = loadService.getAllStops();
+    List<CalendarDate> allCalendarDates = loadService.getCalendarDates();
+    dataStructureFiller.reduceCalendarDates(allCalendarDates);
+    dataStructureFiller.fillDataStructure(stopTransfers, routeSubroutes, stopSubroutes,
+        stopIndexInSubroute, allTrips, allFootPaths, allStops, subroutesByIndex);
+    return new DataStructureModel(routeSubroutes, stopTransfers, stopSubroutes,
+        stopIndexInSubroute, allCalendarDates, subroutesByIndex);
+  }
 
-    private void fillDataStructure(List<TimeObject> stopTimes, Map<Long, Integer[]> routes, List<Stop> routeStops) {
-        List<Route> routesList = routeDataService.getAll();
-        int startRouteStopsIdx = 0;
-        int startStopTimesIdx = 0;
-        for (Route route : routesList) {
-            List<Trip> tripsForRoute = route.getTrips();
-            List<Stop> stopsForRoute;
-            if(tripsForRoute.size() > 0) {
-                stopsForRoute = stopDataService.getStopsForTrip(tripsForRoute.get(0));
-            }
-            else{
-                stopsForRoute = new ArrayList<>();
-            }
-            routes.put(route.getId(), new Integer[]{startRouteStopsIdx, stopsForRoute.size(), startStopTimesIdx, tripsForRoute.size()});
-            addStopsForRouteToRouteStops(stopsForRoute, routeStops);
-            addTimesForRoute(tripsForRoute, stopTimes);
-            startRouteStopsIdx += stopsForRoute.size();
-            startStopTimesIdx += (stopsForRoute.size() * tripsForRoute.size());
-        }
-    }
-
-    private void fillDataStructureWithTransfers(List<Integer> transfers, Map<Long, Integer[]> stops, List<Route> stopRoutes) {
-        List<Stop> stopList = stopDataService.getAll();
-        int startTransfers = 0;
-        int startStopRoutes = 0;
-        for(Stop stop: stopList) {
-            List<Route> routesForStop = routeDataService.getAllWithStop(stop);
-            stops.put(stop.getId(), new Integer[]{startTransfers, 0, startStopRoutes, routesForStop.size()});
-            addRoutesForStopToStopRoutes(routesForStop, stopRoutes);
-            startStopRoutes += routesForStop.size();
-        }
-    }
-
-    private void addRoutesForStopToStopRoutes(List<Route> routes, List<Route> stopRoutes) {
-        routes.forEach(route -> stopRoutes.add(route));
-    }
-
-    private void addStopsForRouteToRouteStops(List<Stop> stopsForRoute, List<Stop> routeStops) {
-        stopsForRoute.forEach(stop -> routeStops.add(stop));
-    }
-
-    private void addTimesForRoute(List<Trip> tripsForRoute, List<TimeObject> stopTimes) {
-        for (Trip trip : tripsForRoute) {
-            for (StopTime stopTime : trip.getStopTimes()) {
-                Long time = convertStringToTime(stopTime.getTime());
-//                addStopTimeIfNotExists(stopTimes, time, trip.getDayType());
-                stopTimes.add(createTimeObject(time, trip.getDayType()));
-            }
-        }
-    }
-
-//    private void addStopTimeIfNotExists(List<TimeObject> stopTimes, Time time, DayType dayType) {
-//        List<TimeObject> existingStopTimes = stopTimes.stream().filter(st -> st.getTime().equals(time)).collect(Collectors.toList());
-//        if(existingStopTimes.size() > 0) {
-//            existingStopTimes.forEach(st -> addDateTypeToTimeObject(st, dayType));
-//        }
-//        stopTimes.add(createTimeObject(time, dayType));
-//    }
-
-//    private void addDateTypeToTimeObject(TimeObject timeObject, DayType dayType){
-//        timeObject.getDayTypes().add(dayType);
-//    }
-
-    private TimeObject createTimeObject(Long time, DayType dayType) {
-//        Set<DayType> dayTypes = new HashSet<>();
-//        dayTypes.add(dayType);
-        return new TimeObject(time, 0, dayType);
-    }
-
-    private Long convertStringToTime(String stringTime) {
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-        long ms = 0;
-        try {
-            ms = sdf.parse(stringTime).getTime();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-//        return new Time(ms);
-        return ms;
-    }
-
+  private void importDataFromGTFS() {
+    System.out.println("Loading GTFS data started.");
+    long startTime = System.nanoTime();
+    loadService.importFiles();
+    long stopTime = System.nanoTime();
+    System.out.println("Loading data finished in " + (stopTime - startTime) + " seconds");
+  }
 }

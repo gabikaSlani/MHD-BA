@@ -2,9 +2,10 @@
   <div class="search-results">
     <Header title="Spojenia"/>
     <ViewBody :tight="true">
+      <Loader v-if="fetching"></Loader>
       <div class="cards">
         <ResultCard class="card"
-                    v-for="(card, index) of results"
+                    v-for="(card, index) of cards"
                     v-bind:key="index"
                     :card="card"
                     @click.native="showDetails(card)"
@@ -19,28 +20,37 @@
 import Header from '../../components/containers/Header.vue';
 import ViewBody from '../../components/containers/ViewBody.vue';
 import ResultCard from './ResultCard.vue';
+import Loader from '../../components/Loader.vue';
 
 export default {
   name: 'SearchResults',
   components: {
+    Loader,
     ResultCard,
     ViewBody,
     Header,
   },
-  props: {
-    results: {
-      type: Array,
+  data() {
+    return {
+      cards: undefined,
+      fetching: false,
+    };
+  },
+  computed: {
+    results() {
+      return this.$store.getters.getResults;
+    },
+  },
+  watch: {
+    results(val) {
+      this.cards = val;
     },
   },
   mounted() {
-    // TODO po dokonceni vyvoja odstranit
-    this.results = this.$store.dispatch('findPaths', {}).then((results) => {
-      this.results = results;
-    });
-
     if (this.results === undefined) {
-      this.$router.push('/search');
+      this.$router.back();
     }
+    this.cards = this.results;
     window.scrollTo(0, 0);
   },
   methods: {
@@ -48,7 +58,41 @@ export default {
       this.$router.push({ name: 'result-details', params: { card } });
     },
     findAnotherTrips() {
-      // TODO
+      this.fetching = true;
+      const request = this.$store.getters.getLastFindPathsRequest;
+      const lastCard = this.cards[this.cards.length - 1];
+      const dateFromCard = lastCard.date;
+      const oldTimeFrom = this.stringDateToDate(dateFromCard);
+      oldTimeFrom.setHours(lastCard.departureTime.substring(0, 2));
+      oldTimeFrom.setMinutes(lastCard.departureTime.substring(3, 5));
+      const newTimeFrom = new Date(oldTimeFrom.getTime() + 60000);
+      request.timeFrom = this.dateToDateTime(newTimeFrom);
+      this.$store.dispatch('findPaths', request).then((response) => {
+        if (response.status !== 200) {
+          alert(response.data);
+          return;
+        }
+        this.cards = response.data;
+        this.fetching = false;
+      }).catch(() => {
+        alert('Nastala chyba pri vyhľadávaní cesty.');
+        this.fetching = false;
+      });
+    },
+    dateToDateTime(date) {
+      return {
+        day: date.getDate(),
+        month: date.getMonth() + 1,
+        year: date.getFullYear(),
+        hour: date.getHours(),
+        minute: date.getMinutes(),
+      };
+    },
+    stringDateToDate(stringDate) {
+      const dd = stringDate.substring(0, 2);
+      const MM = stringDate.substring(3, 5);
+      const yyyy = stringDate.substring(6, 10);
+      return new Date(yyyy, MM - 1, dd);
     },
   },
 };

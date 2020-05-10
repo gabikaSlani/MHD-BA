@@ -1,6 +1,6 @@
 <template>
   <div class="search">
-    <PreFetcher :methods="['fetchStops']">
+    <PreFetcher :methods="['fetchStopAreas', 'loadPreferences']">
       <Header title="Vyhľadanie spojenia" routeNameToRedirect="menu"/>
       <ViewBody :tight="true" class="view-body">
         <SearchBox class="search-box"></SearchBox>
@@ -39,7 +39,7 @@ export default {
   }
 
   .search-box {
-    margin-bottom: 30px;
+    margin-bottom: 15px;
   }
 
   .search-history {

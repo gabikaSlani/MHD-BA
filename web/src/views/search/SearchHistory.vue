@@ -6,12 +6,11 @@
     <div class="body">
       <div v-for="(search, index) of lastSearches" v-bind:key="index"
            class="search">
-        <div class="stops" :class="{invisible: search.invisible}">
+        <div class="stops" :class="{invisible: search.invisible}" @click="selected(search, false)">
           <div>{{search.from.name.name}}</div>
           <div>{{search.to.name.name}}</div>
         </div>
-        <div class="spacer"></div>
-        <div class="icon" v-if="!search.invisible" @click="selected(search)">
+        <div class="icon" v-if="!search.invisible" @click="selected(search, false)">
           <img src="/assets/arrow.png" alt="arrow" class="icon-img">
         </div>
       </div>
@@ -35,7 +34,7 @@ export default {
       if (lastSearches !== undefined && lastSearches.length < 5) {
         const countToAdd = 5 - lastSearches.length;
         for (let i = 0; i < countToAdd; i += 1) {
-          const from = { name: { name: 'Naviditeľná položka' } };
+          const from = { name: { name: 'Neviditeľná položka' } };
           const to = { name: { name: 'na vyplenie výšky' } };
           lastSearches.push({ from, to, invisible: true });
         }
@@ -43,12 +42,12 @@ export default {
       return lastSearches;
     },
     stops() {
-      return this.$store.getters.getStops;
+      return this.$store.getters.getStopAreas;
     },
   },
   methods: {
-    selected(search) {
-      this.$store.dispatch('searchSelected', search);
+    selected(search, runSearch) {
+      this.$store.dispatch('searchSelected', { search, runSearch });
     },
   },
 };
@@ -80,16 +79,13 @@ export default {
     flex-direction: row;
   }
 
-  .spacer {
-    flex: 1;
-  }
-
   .stops {
     display: flex;
     flex-direction: column;
     align-items: baseline;
     padding: 8px 10px;
     font-size: 18px;
+    flex: 1;
   }
 
   .icon {

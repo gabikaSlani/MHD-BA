@@ -1,54 +1,82 @@
 <template>
-  <div class="root">
+  <div class="datetime-picker-root">
     <div class="overlay" id="overlay" :class="{'overlay-hidden': !displayOverlay}"></div>
-    <div class="root">
-      <div class="input root" @click="showDatepicker">{{printedValue}}</div>
-      <Datepicker :language="slovak"
+    <div class="datetime-picker-root">
+      <div class="datetime-picker-input datetime-picker-root"
+           @click="showDatepicker">{{printedValue}}
+      </div>
+      <Datepicker :language="slovak" :disabled-dates="disabledDates"
                   calendar-class="datepicker-calendar-dialog"
                   input-class="datepicker-input"
                   monday-first
-                  v-model="date"
-                  @input="hideDatepicker(); showTimeselector();"/>
-      <div class="timeselector" :class="{'timeselector-hidden': !timeSelectorVisible}">
-        <Timeselector ref="timeselector"
-                      :interval="{h:1, m:1}"
-                      v-model="time"/>
-        <div class="button" @click="confirm">OK</div>
-      </div>
+                  v-model="time"
+                  @input="hideDatepicker(); showTimeselector(); timeManuallyPicked = true"/>
+      <Timeselector v-if="timeSelectorVisible"
+                    :value="time" @input="timeSelected($event)" @close="closeTimeSelector"
+                    :disable="{h:getDisabledHours, m:getDisabledMinutes, s:null}"
+      />
     </div>
   </div>
 </template>
 
 <script>
 import Datepicker from 'vuejs-datepicker';
-import Timeselector from 'vue-timeselector';
 import sk from 'vuejs-datepicker/dist/locale';
+import Timeselector from './TimeSelector.vue';
 
 export default {
   name: 'DateTimepicker',
   components: {
-    Datepicker, Timeselector,
+    Datepicker,
+    Timeselector,
   },
   data() {
     return {
       slovak: sk,
-      date: new Date(),
-      time: new Date(),
       timeSelectorVisible: false,
       displayOverlay: false,
+      timeManuallyPicked: false,
+      time: null,
+      printedValue: '',
     };
   },
   computed: {
-    printedValue() {
-      const now = new Date();
-      if (this.date.getFullYear() === now.getFullYear() && this.date.getMonth() === now.getMonth()
-        && this.date.getDate() === now.getDate() && this.time.getHours() === now.getHours()
-        && this.time.getMinutes() === now.getMinutes()) {
-        return 'Teraz';
+    getDisabledHours() {
+      if (this.$store.getters.getActualDateTime === undefined) return undefined;
+      if (this.sameDay(this.time, this.getActualDateTime)) {
+        const actualHour = this.$store.getters.getActualDateTime.hour;
+        return [...Array(actualHour)
+          .keys()];
       }
-      const dateToPrint = `${this.addZero(this.date.getDate())}.${this.addZero(this.date.getMonth() + 1)}.${this.date.getFullYear()}`;
-      const timeToPrint = `${this.addZero(new Date(this.time).getHours())}:${this.addZero(new Date(this.time).getMinutes())}`;
-      return `${dateToPrint} ${timeToPrint}`;
+      return [];
+    },
+    getDisabledMinutes() {
+      if (this.$store.getters.getActualDateTime === undefined) return undefined;
+      if (this.sameDay(this.time, this.getActualDateTime)) {
+        const actualMinute = this.$store.getters.getActualDateTime.minute;
+        return [...Array(actualMinute)
+          .keys()];
+      }
+      return [];
+    },
+    getActualDateTime() {
+      const now = this.$store.getters.getActualDateTime;
+      if (now === undefined) return undefined;
+      return new Date(now.year, now.month - 1, now.day, now.hour, now.minute);
+    },
+    disabledDates() {
+      return {
+        ranges: [
+          {
+            from: new Date(0, 0, 0),
+            to: this.getActualDateTime,
+          },
+          {
+            from: new Date(2018, 11, 31),
+            to: new Date(2100, 0, 1),
+          },
+        ],
+      };
     },
   },
   mounted() {
@@ -59,7 +87,7 @@ export default {
         this.displayOverlay = false;
       }
     };
-    this.$emit('input', this.mergeDateAndTime());
+    this.$emit('input', this.getActualDateTime);
   },
   methods: {
     showDatepicker() {
@@ -71,37 +99,54 @@ export default {
       this.displayOverlay = false;
     },
     showTimeselector() {
-      this.displayOverlay = true;
       this.timeSelectorVisible = true;
-      this.$refs.timeselector.$el.children[2].className = 'vtimeselector__box';
-      const selectedElements = document.getElementsByClassName('timeselector__box__item--is-selected');
-      setTimeout(() => {
-        selectedElements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-      setTimeout(() => {
-        selectedElements[1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 700);
     },
-    hideTimeselector() {
-      this.displayOverlay = false;
+    closeTimeSelector() {
       this.timeSelectorVisible = false;
-      this.$refs.timeselector.$el.children[2].className = 'vtimeselector__box vtimeselector__box--is-closed';
-    },
-    confirm() {
-      this.hideTimeselector();
-      this.$emit('input', this.mergeDateAndTime());
-    },
-    mergeDateAndTime() {
-      const res = this.date;
-      res.setHours(this.time.getHours());
-      res.setMinutes(this.time.getMinutes());
-      return res;
     },
     addZero(s) {
       if (s <= 9) {
         return `0${s}`;
       }
       return s;
+    },
+    timeSelected(e) {
+      this.time.setMinutes(e.getMinutes());
+      this.time.setHours(e.getHours());
+      this.timeManuallyPicked = true;
+      this.updatePrintedValue(this.time);
+      this.$emit('input', this.time);
+    },
+    updatePrintedValue(val) {
+      const now = new Date();
+      if (val === undefined) this.printedValue = '';
+      if (val.getFullYear() === now.getFullYear()
+        && val.getMonth() === now.getMonth()
+        && val.getDate() === now.getDate()
+        && val.getHours() === now.getHours()
+        && val.getMinutes() === now.getMinutes()) {
+        this.printedValue = 'Teraz';
+      }
+      const dateToPrint = `${this.addZero(val.getDate())}.${this.addZero(val.getMonth() + 1)}.${val.getFullYear()}`;
+      const timeToPrint = `${this.addZero(new Date(val).getHours())}:${this.addZero(new Date(val).getMinutes())}`;
+      this.printedValue = `${dateToPrint} ${timeToPrint}`;
+    },
+    sameDay(day1, day2) {
+      if (day1 === undefined || day2 === undefined) return false;
+      return day1.getFullYear() === day2.getFullYear()
+        && day1.getMonth() === day2.getMonth()
+        && day1.getDate() === day2.getDate();
+    },
+  },
+  watch: {
+    getActualDateTime(val) {
+      if (this.timeManuallyPicked === false) {
+        this.time = val;
+        this.$emit('input', this.time);
+      }
+    },
+    time(val) {
+      this.updatePrintedValue(val);
     },
   },
 };
@@ -122,12 +167,12 @@ export default {
     background: transparent;
   }
 
-  .root {
+  .datetime-picker-root {
     width: 100%;
     height: 100%;
   }
 
-  .input {
+  .datetime-picker-input {
     font-family: sans-serif, Helvetica;
     border: 0;
     font-size: 23px;
@@ -160,43 +205,9 @@ export default {
     display: none;
   }
 
-  .vtimeselector__input, .vtimeselector__clear {
-    display: none;
-  }
 
-  .timeselector {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 280px !important;
-    height: 320px;
-    margin-top: -100px;
-    margin-left: -140px;
-    z-index: 999;
-  }
-
-  .timeselector-hidden, .overlay-hidden {
+  .overlay-hidden {
     display: none !important;
   }
 
-  .vtimeselector__box {
-    border: black 1px solid;
-  }
-
-  .button {
-    position: relative;
-    bottom: -160px;
-    padding: 10px 0;
-    background-color: white;
-    font-weight: bold;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 999;
-    border: black 1px solid;
-    border-top: none;
-  }
-
-  .button:focus {
-    background-color: #eef0f2;
-  }
 </style>

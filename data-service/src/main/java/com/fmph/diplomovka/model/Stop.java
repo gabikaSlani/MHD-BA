@@ -1,94 +1,117 @@
 package com.fmph.diplomovka.model;
 
-import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.Set;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "stops")
 public class Stop implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
+  private static final long serialVersionUID = 1L;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+  @Id
+  @Column(name = "stop_id", nullable = false)
+  private Long stopId;
 
-    @Column(name = "zone", nullable = false, columnDefinition = "int default 100")
-    private Integer zone;
+  @Column(name = "zone", nullable = false)
+  private Integer zone;
 
-    @OneToOne(mappedBy = "stop", cascade = CascadeType.ALL)
-    private Coords coords;
+  @Column(name = "on_request")
+  private boolean onRequest;
 
-    @Column(name = "on_request", nullable = false, columnDefinition = "boolean default false")
-    private Boolean onRequest;
+  @OneToOne(mappedBy = "stop", cascade = CascadeType.ALL)
+  private Coords coords;
 
-    @OneToMany(mappedBy = "stop", cascade = CascadeType.ALL)
-    private Set<StopTime> stopTimes;
+  @ManyToOne(cascade = CascadeType.ALL)
+  private StopArea stopArea;
 
-    public Long getId() {
-        return id;
-    }
+  public Stop() {
+  }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  public Stop(Long stopId, Integer zone, Coords coords, StopArea stopArea, boolean onRequest) {
+    this.stopId = stopId;
+    this.zone = zone;
+    this.coords = coords;
+    this.stopArea = stopArea;
+    this.onRequest = onRequest;
+  }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getZone() {
-        return zone;
-    }
-
-    public void setZone(Integer zone) {
-        this.zone = zone;
-    }
-
-    public Coords getCoords() {
-        return coords;
-    }
-
-    public void setCoords(Coords coords) {
-        this.coords = coords;
-    }
-
-    public Boolean getOnRequest() {
-        return onRequest;
-    }
-
-    public void setOnRequest(Boolean onRequest) {
-        this.onRequest = onRequest;
-    }
-
-    public Set<StopTime> getStopTimes() {
-        return stopTimes;
-    }
-
-    public void setStopTimes(Set<StopTime> stopTimes) {
-        this.stopTimes = stopTimes;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Stop stop = (Stop) o;
-        return id.equals(stop.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+  public Stop(Long stopId, StopArea stopArea, Integer zone) {
+    this.stopId = stopId;
+    this.stopArea = stopArea;
+    this.zone = zone;
+  }
 
 
+  public Long getId() {
+    return stopId;
+  }
+
+  public void setId(Long id) {
+    this.stopId = id;
+  }
+
+  public StopArea getStopArea() {
+    return stopArea;
+  }
+
+  public void setStopArea(StopArea stopArea) {
+    this.stopArea = stopArea;
+  }
+
+  public Integer getZone() {
+    return zone;
+  }
+
+  public void setZone(Integer zone) {
+    this.zone = zone;
+  }
+
+  public Coords getCoords() {
+    return coords;
+  }
+
+  public void setCoords(Coords coords) {
+    this.coords = coords;
+  }
+
+  public boolean isOnRequest() {
+    return onRequest;
+  }
+
+  public void setOnRequest(boolean onRequest) {
+    this.onRequest = onRequest;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+      if (this == o) {
+          return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+          return false;
+      }
+      if (this.stopId == null) {
+          return false;
+      }
+    Stop stop = (Stop) o;
+    return stopId.equals(stop.stopId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(stopId);
+  }
+
+  @Override
+  public String toString() {
+    return stopId.toString();
+  }
 }

@@ -36,18 +36,19 @@ const helpers = {
 
 const actions = {
   addSearchToHistory(state, request) {
-    if (!request.from.id || !request.to.id) {
+    if (request.from.id === undefined || request.to.id === undefined) {
       return;
     }
     let lastSearches = window.localStorage.getItem('searchHistory');
     const objectToAdd = { from: request.from.id, to: request.to.id };
     if (!lastSearches) {
       window.localStorage.setItem('searchHistory', JSON.stringify([objectToAdd]));
+      state.dispatch('computeLastSearches', {});
       return;
     }
     lastSearches = JSON.parse(lastSearches);
     lastSearches = lastSearches
-      .filter(obj => obj.from !== objectToAdd.from && obj.to !== objectToAdd.to);
+      .filter(obj => !(obj.from === objectToAdd.from && obj.to === objectToAdd.to));
     lastSearches.push(objectToAdd);
     while (lastSearches.length > 5) {
       lastSearches.shift();
@@ -57,7 +58,7 @@ const actions = {
   },
   computeLastSearches(state) {
     const lastSearches = window.localStorage.getItem('searchHistory');
-    const stops = state.getters.getStops;
+    const stops = state.getters.getStopAreas;
     if (!lastSearches || !stops) {
       state.commit('setLastSearches', []);
       return;

@@ -1,48 +1,50 @@
 package com.fmph.diplomovka.services.mappers;
 
-import api.com.fmph.diplomovka.model.RouteInfoDom;
 import api.com.fmph.diplomovka.model.StopDom;
-import api.com.fmph.diplomovka.model.StopNameDom;
+import api.com.fmph.diplomovka.model.StopInfoDom;
 import com.fmph.diplomovka.model.Stop;
-import com.fmph.diplomovka.service.RouteDataService;
+import com.fmph.diplomovka.model.StopTime;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
-import static java.util.stream.Collectors.toList;
 
 @Component
 public class StopMapper {
 
-    private final RouteDataService routeDataService;
-    private final RouteInfoMapper routeInfoMapper;
-    private final CoordsMapper coordsMapper;
+  private final StopAreaMapper stopAreaMapper;
+  private final CoordsMapper coordsMapper;
+  private final StopNameMapper stopNameMapper;
 
-    public StopMapper(RouteDataService routeDataService, RouteInfoMapper routeInfoMapper, CoordsMapper coordsMapper) {
-        this.routeDataService = routeDataService;
-        this.routeInfoMapper = routeInfoMapper;
-        this.coordsMapper = coordsMapper;
-    }
-
-
-    public StopDom mapStopToStopDom(Stop stop) {
-        return new StopDom()
-                .id(stop.getId().intValue())
-                .name(createStopNameDom(stop.getName()))
-                .coords(coordsMapper.createCoordsDom(stop.getCoords()))
-                .onRequest(stop.getOnRequest())
-                .zone(stop.getZone())
-                .routes(createListOfRoutesInfoDom(stop));
-    }
-
-    public StopNameDom createStopNameDom(String name) {
-        return new StopNameDom().name(name);
-    }
+  public StopMapper(StopAreaMapper stopAreaMapper, CoordsMapper coordsMapper,
+      StopNameMapper stopNameMapper) {
+    this.stopAreaMapper = stopAreaMapper;
+    this.coordsMapper = coordsMapper;
+    this.stopNameMapper = stopNameMapper;
+  }
 
 
-    private List<RouteInfoDom> createListOfRoutesInfoDom(Stop stop) {
-        return routeDataService.getAllWithStop(stop).stream()
-                .map(routeInfoMapper::createRouteInfoDom)
-                .collect(toList());
-    }
+  public StopDom mapStopToStopDom(Stop stop) {
+    return new StopDom()
+        .id(stop.getId().intValue())
+        .name(stopNameMapper.createStopNameDom(stop.getStopArea().getName()))
+        .coords(coordsMapper.createCoordsDom(stop.getCoords()))
+        .stopArea(stopAreaMapper.mapStopAreaToStopAreaDom(stop.getStopArea()));
+  }
+
+  public StopDom mapStopTimeToStopDom(StopTime stopTime) {
+    Stop stop = stopTime.getStop();
+    return new StopDom()
+        .id(stop.getId().intValue())
+        .name(stopNameMapper.createStopNameDom(stop.getStopArea().getName()))
+        .coords(coordsMapper.createCoordsDom(stop.getCoords()));
+  }
+
+  public StopInfoDom mapStopToStopInfoDom(Stop stop) {
+    return new StopInfoDom()
+        .id(stop.getId().intValue())
+        .name(stopNameMapper.createStopNameDom(stop.getStopArea().getName()))
+        .onRequest(stop.isOnRequest())
+        .zone(stop.getZone())
+        .coords(coordsMapper.createCoordsDom(stop.getCoords()));
+  }
+
 }

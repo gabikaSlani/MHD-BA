@@ -20,9 +20,23 @@ paths:
         200:
           description: ""
           schema:
-            type: array
+            type: "array"
             items:
               $ref: '#/definitions/Route'
+  /getRouteDetail:
+    get:
+      consumes: []
+      parameters:
+        - in: query
+          name: routeId
+          type: integer
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: '#/definitions/RouteDetail'
+        400:
+          description: "Route with this id doesnt exists"
   /getAllStops:
     get:
       description: ""
@@ -31,9 +45,20 @@ paths:
         200:
           description: ""
           schema:
-            type: array
+            type: "array"
             items:
               $ref: '#/definitions/Stop'
+  /getAllStopAreas:
+    get:
+      description: ""
+      consumes: []
+      responses:
+        200:
+          description: ""
+          schema:
+            type: "array"
+            items:
+              $ref: '#/definitions/StopArea'
   /findPaths:
     post:
       produces:
@@ -53,6 +78,37 @@ paths:
             type: array
             items:
               $ref: '#/definitions/Card'
+        400:
+          description: Bad request
+          schema:
+            type: object
+            required:
+              - code
+              - message
+            properties:
+              code:
+                type: string
+                maxLength: 100
+              message:
+                type: string
+                maxLength: 500
+  /import:
+    get:
+      description: "Import static timetable"
+      consumes: []
+      responses:
+        200:
+          description: "Successfully imported"
+  /getActualDateTime:
+    get:
+      description: "Return actual date and time"
+      consumes: []
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: '#/definitions/DateTimeObject'
+
 definitions:
   Route:
     type: "object"
@@ -61,11 +117,22 @@ definitions:
         type: "integer"
       routeInfo:
         $ref: '#/definitions/RouteInfo'
-      stops:
-        type: "array"
-        items:
-          $ref: '#/definitions/Stop'
+      startStopName:
+        $ref: '#/definitions/StopName'
+      endStopName:
+        $ref: '#/definitions/StopName'
   Stop:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        $ref: '#/definitions/StopName'
+      coords:
+        $ref: '#/definitions/Coords'
+      stopArea:
+        $ref: '#/definitions/StopArea'
+  StopInfo:
     type: "object"
     properties:
       id:
@@ -81,6 +148,13 @@ definitions:
         enum:
           - 100
           - 101
+  StopArea:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        $ref: '#/definitions/StopName'
       routes:
         type: "array"
         items:
@@ -101,6 +175,15 @@ definitions:
           - "tramway"
           - "trolleybus"
           - "bus"
+  RouteDetail:
+    type: "object"
+    properties:
+      routeInfo:
+        $ref: '#/definitions/RouteInfo'
+      stops:
+        type: "array"
+        items:
+          $ref: '#/definitions/StopInfo'
   Coords:
     type: "object"
     properties:
@@ -137,9 +220,19 @@ definitions:
           $ref: '#/definitions/TripStop'
       finalStop:
         $ref: '#/definitions/StopName'
+      boardingTime:
+        type: "string"
+      getOffTime:
+        type: "string"
+      leftTheOriginStop:
+        type: "boolean"
   Action:
     type: "object"
     properties:
+      startStop:
+        $ref: '#/definitions/StopName'
+      endStop:
+        $ref: '#/definitions/StopName'
       type:
         type: "string"
         enum:
@@ -156,9 +249,11 @@ definitions:
         $ref: '#/definitions/StopName'
       endStop:
         $ref: '#/definitions/StopName'
+      departureTime:
+        type: 'string'
+      arrivalTime:
+        type: 'string'
       duration:
-        type: "integer"
-      distance:
         type: "integer"
       date:
         type: "string"
@@ -169,7 +264,7 @@ definitions:
   StartPoint:
     type: "object"
     properties:
-      stopId:
+      stopAreaId:
         type: "integer"
       coords:
         $ref: '#/definitions/Coords'
@@ -179,11 +274,10 @@ definitions:
       from:
         $ref: '#/definitions/StartPoint'
       to:
+        description: "stopAreaId"
         type: "integer"
-      time:
-        type: "number"
-      number:
-        type: "integer"
+      timeFrom:
+        $ref: '#/definitions/DateTimeObject'
       maxNumberOfTransfers:
         type: "integer"
         enum:
@@ -191,51 +285,42 @@ definitions:
           - 1
           - 2
           - 3
-          - 4
-          - 5
-          - 6
-          - 7
-          - 8
-          - 9
       maxTimeOfWalking:
+        description: "minutes"
         type: "integer"
         enum:
-          - 0
           - 1
           - 2
           - 3
           - 4
           - 5
           - 6
-          - 7
+          - 8
           - 10
-          - 12
-          - 15
-          - 20
-          - 25
-          - 30
-          - 45
-          - 60
       minTimeForTransfer:
+        description: "minutes"
         type: "integer"
         enum:
-          - 0
           - 1
           - 2
           - 3
           - 4
           - 5
-          - 6
-          - 7
-          - 10
-          - 12
-          - 15
-          - 20
       onlyLowFloor:
         type: "boolean"
-
-
-
-
-
+  DateTimeObject:
+    type: "object"
+    properties:
+      day:
+        type: "integer"
+      month:
+        type: "integer"
+      year:
+        type: "integer"
+      hour:
+        type: "integer"
+      minute:
+        type: "integer"
+      second:
+        type: "integer"
 

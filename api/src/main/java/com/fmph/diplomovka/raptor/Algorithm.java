@@ -1,189 +1,197 @@
 package com.fmph.diplomovka.raptor;
 
 
-import com.fmph.diplomovka.model.DayType;
-import com.fmph.diplomovka.model.Route;
-import com.fmph.diplomovka.model.Stop;
-import com.fmph.diplomovka.raptor.dataStructure.DataStructure;
-import com.fmph.diplomovka.raptor.raptorStructure.RouteStop;
-import com.fmph.diplomovka.raptor.raptorStructure.StopRoundKey;
-import com.fmph.diplomovka.raptor.raptorStructure.StopTimeAndPrevStop;
-import com.fmph.diplomovka.service.StopDataService;
-import com.fmph.diplomovka.services.models.Path;
-import com.fmph.diplomovka.services.models.SearchParams;
-import org.springframework.stereotype.Service;
+import static java.util.stream.Collectors.toMap;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.*;
+import com.fmph.diplomovka.TimeSimulator;
+import com.fmph.diplomovka.model.ServiceDay;
+import com.fmph.diplomovka.model.Stop;
+import com.fmph.diplomovka.raptor.dataStructure.models.Subroute;
+import com.fmph.diplomovka.raptor.dataStructure.models.SubrouteTrip;
+import com.fmph.diplomovka.raptor.dataStructure.models.Time;
+import com.fmph.diplomovka.raptor.dataStructure.models.Transfer;
+import com.fmph.diplomovka.raptor.raptorStructure.Queue;
+import com.fmph.diplomovka.raptor.raptorStructure.TodayTripFinder;
+import com.fmph.diplomovka.raptor.raptorStructure.TripFinder;
+import com.fmph.diplomovka.raptor.results.RaptorResults;
+import com.fmph.diplomovka.services.ServiceDayService;
+import com.fmph.diplomovka.services.models.SearchParams;
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.springframework.stereotype.Service;
 
 @Service
 public class Algorithm {
 
-    private final DayService dayService;
-    private final DataStructure dataStructure;
-    private final StopDataService stopDataService;
+  private final DataStructure dataStructure;
+  private final ServiceDayService serviceDayService;
+  private final TimeSimulator timeSimulator;
 
+  public Algorithm(DataStructure dataStructure,
+      ServiceDayService serviceDayService, TimeSimulator timeSimulator) {
+    this.dataStructure = dataStructure;
+    this.serviceDayService = serviceDayService;
+    this.timeSimulator = timeSimulator;
+  }
 
-    private Map<StopRoundKey, StopTimeAndPrevStop> earliestArrivals;
-    private List<Stop> markedStops = new ArrayList<>();
-    private List<RouteStop> queue;
-
-    public Algorithm(DayService dayService, DataStructure dataStructure, StopDataService stopDataService) {
-        this.dayService = dayService;
-        this.dataStructure = dataStructure;
-        this.stopDataService = stopDataService;
+  public RaptorResults search(SearchParams searchParams) {
+    Set<Stop> markedStops = initializeMarkedStops(searchParams);
+    RaptorResults raptorResults = initializeRaptorResults(searchParams);
+    while (markedStops.size() > 0 && raptorResults.getRound() <= searchParams
+        .getMaxNumberOfTransfers()) {
+      Set<Stop> improvedStops = new HashSet<>();
+      raptorResults.addRound();
+      traverseRoutes(raptorResults, improvedStops, searchParams, markedStops);
+      if (!(searchParams.getActualLocation() && raptorResults.getRound() == 1)) {
+        traverseTransfers(raptorResults, improvedStops, searchParams.getMaxTimeOfWalking(),
+            markedStops, searchParams);
+      }
+      markedStops = improvedStops;
     }
 
-    public Path returnShortestPath(SearchParams searchParams) {
-        LocalDateTime searchedDateTime = getDateTimeFromMs(searchParams.getTime());
-        Set<DayType> searchedDayTypes = dayService.getDayTypesBelongToDate(searchedDateTime.toLocalDate());
-        Stop startStop = searchParams.getFromStop();
-        Stop endStop = searchParams.getToStop();
-        Long startTime =  searchParams.getTime();
-        Integer numberOfRounds = searchParams.getMaxNumberOfTransfers();
-        markedStops.add(startStop);
-        initializeEarliestArrivals(numberOfRounds, stopDataService.getAll(), startStop, startTime);
-        raptorAlgorithm(numberOfRounds, startTime, endStop);
-        return buildPath();
-    }
+    //raptorResults.print();
+    return raptorResults;
+  }
 
-    private void initializeEarliestArrivals(Integer numberOfRounds, List<Stop> stops, Stop startStop, Long startTime) {
-        for(Stop stop: stops) {
-            for(int round = 0; round < numberOfRounds; round++) {
-                StopRoundKey srk = new StopRoundKey(stop.getId(), round);
-                StopTimeAndPrevStop st;
-                if(stop.equals(startStop)) {
-                    st = new StopTimeAndPrevStop(startTime, null);
-                }
-                else{
-                    st = new StopTimeAndPrevStop(Long.MAX_VALUE, null);
-                }
-                earliestArrivals.put(srk, st);
-            }
+  private RaptorResults initializeRaptorResults(SearchParams searchParams) {
+    return new RaptorResults(createOriginStopTimes(searchParams), dataStructure);
+  }
+
+  private void traverseRoutes(RaptorResults raptorResults, Set<Stop> improvedStops,
+      SearchParams searchParams, Set<Stop> markedStops) {
+    Queue queue = new Queue(dataStructure, markedStops);
+    for (Map.Entry<Subroute, Stop> entry : queue.getQueue().entrySet()) {
+      int boardingPoint = -1;
+      SubrouteTrip trip = null;
+      Subroute subroute = entry.getKey();
+      Stop stopP = entry.getValue();
+
+      int boardingStopIndex = dataStructure.getDataStructureModel().getStopIndexInSubroute()
+          .get(subroute.getId()).get(stopP.getId());
+      for (int pi = boardingStopIndex; pi < entry.getKey().getLength(); pi++) {
+        Stop stopPi = subroute.getStops().get(pi);
+        Time prevArrival = raptorResults.prevArrival(stopPi);
+        if (trip != null) {
+          Time arrivalTime = trip.getStopTimeObjects()[pi].getTime();
+          if (arrivalTimeEarlierThanBestArrivalAndBestTargetArrival(arrivalTime, stopPi,
+              raptorResults, searchParams)) {
+            raptorResults.setTrip(trip, boardingPoint, pi, isToday(searchParams),
+                timeSimulator.getActualTime());
+            improvedStops.add(stopPi);
+          } else if (arrivalTimeEqualsBestArrival(arrivalTime, stopPi, raptorResults)) {
+            raptorResults.setTripWhenEqual(trip, boardingPoint, pi, isToday(searchParams),
+                timeSimulator.getActualTime());
+          }
         }
-    }
-
-    private void raptorAlgorithm(Integer numberOfRounds, Long startTime, Stop finalStop) {
-        for(int round = 0; round < numberOfRounds; round++) {
-            accumulateRoutesServingMarkedStops();
-            traverseRoutes(round, startTime, finalStop);
-            if(markedStops.isEmpty()){
-                return;
-            }
+        if (prevArrival != null && (trip == null || previousArrivalEarlierThanArrivalTime(
+            prevArrival, trip.getStopTimeObjects()[pi].getTime()))) {
+          trip = findEarliestTrip(subroute, pi, prevArrival, searchParams, raptorResults);
+          boardingPoint = pi;
         }
+      }
     }
+  }
 
-    private void accumulateRoutesServingMarkedStops(){
-        queue = new ArrayList<>();
-        for(Stop markedStop: markedStops) {
-            for (Route route : dataStructure.getDataStructureModel().getStopRoutes()) {
-                Optional<RouteStop> existingRouteStopInQueue = getAllRouteStopsWithRoute(route);
-                if(existingRouteStopInQueue.isPresent()) {
-                    if(stop1BeforeStop2(markedStop, existingRouteStopInQueue.get().getStop(), route)){
-                        queue.remove(existingRouteStopInQueue);
-                        queue.add(new RouteStop(route, markedStop));
-                    }
-                } else {
-                    queue.add(new RouteStop(route, markedStop));
-                }
+  private SubrouteTrip findEarliestTrip(Subroute subroute, int stopIndex, Time prevArrival,
+      SearchParams searchParams, RaptorResults raptorResults) {
+    Time startingTime = getStartingTime(raptorResults, searchParams.getMinTimeForTransfer(),
+        prevArrival);
+    Set<ServiceDay> possibleServiceDays = serviceDayService
+        .getPossibleServiceDays(searchParams.getDateFrom());
+    if (isToday(searchParams)) {
+      return getEarliestTodayTrip(subroute, stopIndex, startingTime, possibleServiceDays,
+          searchParams.getOnlyLowFloor());
+    }
+    return getEarliestTrip(subroute, stopIndex, startingTime, possibleServiceDays,
+        searchParams.getOnlyLowFloor());
+  }
+
+  private SubrouteTrip getEarliestTrip(Subroute subroute, int stopIndex, Time startingTime,
+      Set<ServiceDay> possibleServiceDays, boolean onlyLowFloor) {
+    TripFinder tripFinder = new TripFinder();
+    return tripFinder
+        .getEarliestTrip(subroute, stopIndex, startingTime, possibleServiceDays, onlyLowFloor);
+  }
+
+  private SubrouteTrip getEarliestTodayTrip(Subroute subroute, int stopIndex, Time startingTime,
+      Set<ServiceDay> possibleServiceDays, boolean onlyLowFloor) {
+    TodayTripFinder todayTripFinder = new TodayTripFinder();
+    return todayTripFinder
+        .findEarliestTrip(subroute, stopIndex, startingTime, possibleServiceDays, onlyLowFloor);
+  }
+
+  private Time getStartingTime(RaptorResults raptorResults, int minTimeForTransfer,
+      Time arrivalTime) {
+    return raptorResults.getRound() == 1
+        ? arrivalTime
+        : new Time(arrivalTime).addMinutes(minTimeForTransfer);
+  }
+
+  private void traverseTransfers(RaptorResults raptorResults, Set<Stop> improvedStops,
+      int maxTimeOfWalking, Set<Stop> markedStops, SearchParams searchParams) {
+    for (Stop stop : markedStops) {
+      if (raptorResults.previousRoundBestArrivalTimeReachedBySomeTrip(stop)) {
+        List<Transfer> transfers = dataStructure.getDataStructureModel().getStopTransfers()
+            .get(stop.getId());
+        if (transfers != null) {
+          for (Transfer transfer : transfers) {
+            if (transfer.getDuration() <= maxTimeOfWalking) {
+              Stop endStop = transfer.getDestinationStop();
+              Time arrivalTime = new Time(raptorResults.prevArrival(stop))
+                  .addMinutes(transfer.getDuration());
+              if (arrivalTimeEarlierThanBestArrivalAndBestTargetArrival(arrivalTime, endStop,
+                  raptorResults, searchParams)) {
+                raptorResults.setTransfer(transfer, arrivalTime);
+                improvedStops.add(endStop);
+              } else if (arrivalTimeEqualsBestArrival(arrivalTime, endStop,
+                  raptorResults)) {
+                raptorResults.setTransferWhenEqual(transfer, arrivalTime);
+              }
             }
-            markedStops.remove(markedStop);
+          }
         }
+      }
     }
+  }
 
-    private void traverseRoutes(int round, Long startTime, Stop finalStop) {
-        for(RouteStop routeStop: queue){
-            Integer[] array = dataStructure.getDataStructureModel().getRoutes().get(routeStop.getRoute());
-            int startStopTimesId = array[2];
-            int numberOfTripsForRoute = array[3];
-            int numberOfStopsForRoute = array[1];
-            Long startingTime;
-            if(round == 0){
-                startingTime = startTime;
-            }
-            else{
-                startingTime = getEATimeForStopAndRound(routeStop.getStop().getId(), round - 1);
-            }
-            int stopId = getIdOfStopInRoute(routeStop.getRoute(), routeStop.getStop());
-            int currentTripId = 0; //Tnaopak
-            int currentStopOnTripId = -1; //p
-            for(int i = startStopTimesId + stopId; i < numberOfStopsForRoute * numberOfTripsForRoute; i+=numberOfStopsForRoute ){
-                Long time = dataStructure.getDataStructureModel().getStopTimes().get(i).getTime();
-                if(time >= startingTime){
-                    currentStopOnTripId = i;
-                    break;
-                }
-                currentTripId++;
-            }
-            int tripId = currentTripId; //t
-            //prechadzam p' zastavky v tripe t nasledujuce za zastavkou p
-            for(int p = currentStopOnTripId; p < currentStopOnTripId + numberOfStopsForRoute; p++) {
-                if(tripId != currentTripId && eaTimeGetBetterForTripAndStopAtRound(p, routeStop.getStop(), round, finalStop.getId())){
-                    break;
-                }
-                else{
-                    tripId = 0;
-                }
-            }
-        }
-    }
+  //zatial budeme brat do uvahy odchod po fromTime pre vsetky zaciatocne a konecne zastavky
+  private Map<Stop, Time> createOriginStopTimes(SearchParams searchParams) {
+    return searchParams.getStartStops().keySet().stream()
+        .collect(toMap(
+            stop -> stop,
+            stop -> new Time(createFromTimeForStartStop(searchParams, stop)), (t1, t2) -> t1));
+  }
 
-    private Path buildPath() {
-        return null;
-    }
+  private Time createFromTimeForStartStop(SearchParams searchParams, Stop stop) {
+    return new Time(searchParams.getTimeFrom()).addMinutes(searchParams.getStartStops().get(stop));
+  }
 
-    private boolean eaTimeGetBetterForTripAndStopAtRound(int stopTimesId, Stop stop, int round, long finalStopId){
-        long earliestToFinalStop = earliestArrivals.get(new StopRoundKey(finalStopId, round)).getTime();
-        long earliestToStop = earliestArrivals.get(new StopRoundKey(stop.getId(), round)).getTime();
-        long arrivalAtStopInTrip = dataStructure.getDataStructureModel().getStopTimes().get(stopTimesId).getTime();
-        return arrivalAtStopInTrip < Long.min(earliestToStop, earliestToFinalStop);
-    }
+  private boolean arrivalTimeEarlierThanBestArrivalAndBestTargetArrival(Time arrivalTime, Stop stop,
+      RaptorResults raptorResults, SearchParams searchParams) {
+    return arrivalTime.isBefore(raptorResults.bestArrival(stop))
+        && arrivalTime.isBefore(raptorResults.bestTargetArrival(searchParams));
+  }
 
-    private Long getEATimeForStopAndRound(Long stopId, int round) {
-        return earliestArrivals.get(new StopRoundKey(stopId, round)).getTime();
-    }
+  private boolean arrivalTimeEqualsBestArrival(Time arrivalTime, Stop stop,
+      RaptorResults raptorResults) {
+    return arrivalTime.equals(raptorResults.bestArrival(stop));
+  }
 
+  private boolean previousArrivalEarlierThanArrivalTime(Time prevArrival, Time arrivalTime) {
+    return prevArrival.isBefore(arrivalTime);
+  }
 
-    private Optional<RouteStop> getAllRouteStopsWithRoute(Route route){
-        return queue.stream().filter(routeStop -> routeStop.getRoute().equals(route)).findFirst();
-    }
+  //dat tie ktore su vo vyhladavani plus take zastavky ku ktorym sa viem dostat na menej ako maxTimeOfWalking.
+  private Set<Stop> initializeMarkedStops(SearchParams searchParams) {
+    return searchParams.getStartStops().keySet();
+  }
 
-    private LocalDateTime getDateTimeFromMs(Long ms) {
-        return Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDateTime();
-    }
+  private boolean isToday(SearchParams searchParams) {
+    LocalDate today = timeSimulator.getActualLocalDate();
+    return searchParams.getDateFrom().equals(today);
+  }
 
-    private boolean stop1BeforeStop2(Stop stop1, Stop stop2, Route route){
-        Integer[] array = dataStructure.getDataStructureModel().getRoutes().get(route.getId());
-        int stopStartId = array[0];
-        int numberOfStops = array[1];
-        for(int i = stopStartId; i < stopStartId + numberOfStops; i++) {
-            if(stopIsInRouteStopOnIndex(stop1, i)){
-                return true;
-            }
-            else if(stopIsInRouteStopOnIndex(stop2, i)){
-                return false;
-            }
-        }
-        return false;
-    }
-
-    private boolean stopIsInRouteStopOnIndex(Stop stop, int i){
-        return dataStructure.getDataStructureModel().getRouteStops().get(i).equals(stop);
-    }
-
-    private Integer getIdOfStopInRoute(Route route, Stop stop) {
-        Integer[] array = dataStructure.getDataStructureModel().getRoutes().get(route.getId());
-        int startStopInx = array[0];
-        int numberOfStopsForRoute = array[1];
-        int stopId = 0;
-        for(int i = startStopInx; i < numberOfStopsForRoute + startStopInx; i++){
-            if(dataStructure.getDataStructureModel().getRouteStops().get(i).equals(stop)){
-                return stopId;
-            }
-            stopId++;
-        }
-        return stopId;
-    }
 }

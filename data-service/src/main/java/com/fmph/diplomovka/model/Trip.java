@@ -1,88 +1,131 @@
 package com.fmph.diplomovka.model;
 
-import org.hibernate.annotations.SortNatural;
-
-import javax.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.SortedSet;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "trips")
 public class Trip implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
+  private static final long serialVersionUID = 1L;
 
-    @Column(name = "day_type", nullable=false)
-    @Enumerated(EnumType.STRING)
-    private DayType dayType;
+  @Id
+  @Column(name = "trip_id", nullable = false)
+  private Long tripId;
 
-    @Column(name = "low_floor", nullable = false)
-    private Boolean lowFloor;
+  @ManyToOne(cascade = CascadeType.ALL)
+  private ServiceDay serviceDay;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn
-    private Route route;
+  @Column(name = "low_floor", nullable = false)
+  private Boolean lowFloor;
 
-    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL)
-    @SortNatural
-    private SortedSet<StopTime> stopTimes;
+  @Column(name = "direction", nullable = false)
+  private Boolean direction;
 
-    public Long getId() {
-        return id;
-    }
+  @ManyToOne(cascade = CascadeType.ALL)
+  private Route route;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  private List<StopTime> stopTimes = new ArrayList<>();
 
-    public DayType getDayType() {
-        return dayType;
-    }
+  public Trip() {
+  }
 
-    public void setDayType(DayType dayType) {
-        this.dayType = dayType;
-    }
+  public Trip(Long tripId, ServiceDay serviceDay, Boolean lowFloor, Boolean direction,
+      Route route) {
+    this.tripId = tripId;
+    this.serviceDay = serviceDay;
+    this.lowFloor = lowFloor;
+    this.direction = direction;
+    this.route = route;
+  }
 
-    public Boolean getLowFloor() {
-        return lowFloor;
-    }
+  public Trip(Long tripId, Boolean lowFloor, Boolean direction, List<StopTime> stopTimes,
+      ServiceDay serviceDay) {
+    this.tripId = tripId;
+    this.lowFloor = lowFloor;
+    this.direction = direction;
+    this.stopTimes = stopTimes;
+    this.serviceDay = serviceDay;
+  }
 
-    public void setLowFloor(Boolean lowFloor) {
-        this.lowFloor = lowFloor;
-    }
+  public Long getId() {
+    return tripId;
+  }
 
-    public Route getRoute() {
-        return route;
-    }
+  public void setId(Long id) {
+    this.tripId = id;
+  }
 
-    public void setRoute(Route route) {
-        this.route = route;
-    }
+  public Boolean getLowFloor() {
+    return lowFloor;
+  }
 
-    public SortedSet<StopTime> getStopTimes() {
-        return stopTimes;
-    }
+  public void setLowFloor(Boolean lowFloor) {
+    this.lowFloor = lowFloor;
+  }
 
-    public void setStopTimes(SortedSet<StopTime> stopTimes) {
-        this.stopTimes = stopTimes;
-    }
+  public List<StopTime> getStopTimes() {
+    return stopTimes;
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Trip trip = (Trip) o;
-        return id.equals(trip.id);
-    }
+  public void setStopTimes(List<StopTime> stopTimes) {
+    this.stopTimes = stopTimes;
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+  public ServiceDay getServiceDay() {
+    return serviceDay;
+  }
+
+  public void setServiceDay(ServiceDay serviceDay) {
+    this.serviceDay = serviceDay;
+  }
+
+  public Route getRoute() {
+    return route;
+  }
+
+  public void setRoute(Route route) {
+    this.route = route;
+  }
+
+  public Boolean getDirection() {
+    return direction;
+  }
+
+  public void setDirection(Boolean direction) {
+    this.direction = direction;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+      if (this == o) {
+          return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+          return false;
+      }
+    Trip trip = (Trip) o;
+      if (this.tripId == null) {
+          return false;
+      }
+    return tripId.equals(trip.tripId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(tripId);
+  }
 
 
 }

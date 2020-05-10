@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface FootPathRepository extends JpaRepository<FootPath, Long> {
+
 }

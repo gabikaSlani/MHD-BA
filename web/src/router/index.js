@@ -7,6 +7,7 @@ import RouteDetails from '../views/routeList/RouteDetails.vue';
 import RouteOnMap from '../views/routeList/RouteOnMap.vue';
 import SearchResults from '../views/searchResults/SearchResults.vue';
 import ResultDetails from '../views/searchResults/ResultDetails.vue';
+import ErrorPage from '../views/ErrorPage.vue';
 
 Vue.use(VueRouter);
 
@@ -28,7 +29,7 @@ const routes = [
   },
   {
     name: 'route-details',
-    path: '/route-list/details',
+    path: '/route-list/details/:id',
     component: RouteDetails,
     props: true,
   },
@@ -49,6 +50,11 @@ const routes = [
     path: '/search-results/details',
     component: ResultDetails,
     props: true,
+  },
+  {
+    name: 'error',
+    path: '/error',
+    component: ErrorPage,
   },
   {
     path: '*',

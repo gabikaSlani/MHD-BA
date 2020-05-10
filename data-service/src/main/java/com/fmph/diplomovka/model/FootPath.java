@@ -1,75 +1,97 @@
 package com.fmph.diplomovka.model;
 
-import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "foot_paths")
 public class FootPath implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
+  private static final long serialVersionUID = 1L;
 
-    @Column(name = "time", nullable = false)
-    private Integer time;
+  @Id
+  @Column(nullable = false)
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "from_stop", nullable = false)
-    private Stop fromStop;
+  @Column(name = "time", nullable = false)
+  private Integer time;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "to_stop", nullable = false)
-    private Stop toStop;
+  @ManyToOne(optional = true)
+  @JoinColumn(name = "from_stop", nullable = false)
+  private Stop fromStop;
 
-    public Long getId() {
-        return id;
-    }
+  @ManyToOne(optional = true)
+  @JoinColumn(name = "to_stop", nullable = false)
+  private Stop toStop;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  public FootPath(Stop fromStop, Stop toStop, Integer time) {
+    this.time = time;
+    this.fromStop = fromStop;
+    this.toStop = toStop;
+  }
 
-    public Integer getTime() {
-        return time;
-    }
+  public FootPath() {
+  }
 
-    public void setTime(Integer time) {
-        this.time = time;
-    }
+  public FootPath(Long id, Stop fromStop, Stop toStop, Integer time) {
+    this.id = id;
+    this.time = time;
+    this.fromStop = fromStop;
+    this.toStop = toStop;
+  }
 
-    public Stop getFromStop() {
-        return fromStop;
-    }
+  public Long getId() {
+    return id;
+  }
 
-    public void setFromStop(Stop fromStop) {
-        this.fromStop = fromStop;
-    }
+  public void setId(Long id) {
+    this.id = id;
+  }
 
-    public Stop getToStop() {
-        return toStop;
-    }
+  public Integer getTime() {
+    return time;
+  }
 
-    public void setToStop(Stop toStop) {
-        this.toStop = toStop;
-    }
+  public void setTime(Integer time) {
+    this.time = time;
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        FootPath footPath = (FootPath) o;
-        return id.equals(footPath.id) &&
-                time.equals(footPath.time) &&
-                fromStop.equals(footPath.fromStop) &&
-                toStop.equals(footPath.toStop);
-    }
+  public Stop getFromStop() {
+    return fromStop;
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, time, fromStop, toStop);
-    }
+  public void setFromStop(Stop fromStop) {
+    this.fromStop = fromStop;
+  }
 
+  public Stop getToStop() {
+    return toStop;
+  }
+
+  public void setToStop(Stop toStop) {
+    this.toStop = toStop;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+      if (this == o) {
+          return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+          return false;
+      }
+    FootPath footPath = (FootPath) o;
+    return id.equals(footPath.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
 }

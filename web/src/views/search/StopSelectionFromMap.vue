@@ -1,44 +1,48 @@
 <template>
   <div class="stop-selection-map-dialog" v-if="shown">
-    <div v-if="!currentLocation" class="stop-selection-map">Musíte povoliť polohu.</div>
-    <gmap-map v-if="currentLocation" :center="currentLocation" :zoom="12"
-              class="stop-selection-map">
-      <gmap-marker :key="stop.id"
-                   v-for="stop in stops"
-                   @click="select(stop)"
-                   :position="coordsFromStringToNumber(stop.coords)"
-                   :icon="markerOptions">
-      </gmap-marker>
-      <gmap-info-window :key="stop.name.name"
-                        v-for="stop in stops"
-                        :options="infoOptions"
-                        :position="coordsFromStringToNumber(stop.coords)"
-                        :opened="true">{{stop.name.name}}
-      </gmap-info-window>
-    </gmap-map>
-    <div class="stop-selection-map-back-button-div">
-      <IconButton src="/assets/back.png" class="stop-selection-map-back-button"
-                  @click.native="back"></IconButton>
-    </div>
+    <PreFetcher :methods="['fetchStops']">
+      <div v-if="stops" class="condition-wrapper">
+        <div v-if="!currentLocation" class="stop-selection-map">Musíte povoliť polohu.</div>
+        <gmap-map v-if="currentLocation" :center="currentLocation" :zoom="zoom"
+                  class="stop-selection-map"
+                  @bounds_changed="saveBounds($event)">
+          <gmap-marker :key="-stop.id" :animation="undefined"
+                       v-for="stop in stopsInView"
+                       @click="select(stop)"
+                       :position="coordsFromStringToNumber(stop.coords)"
+                       :icon="markerOptions">
+          </gmap-marker>
+        </gmap-map>
+        <div class="stop-selection-map-back-button-div">
+          <IconButton src="/assets/back.png" class="stop-selection-map-back-button"
+                      @click.native="back"></IconButton>
+        </div>
+      </div>
+    </PreFetcher>
   </div>
 </template>
 
 <script>
 import IconButton from '../../components/inputs/IconButton.vue';
+import PreFetcher from '../../components/PreFetcher.vue';
 
 const mapMarker = require('../../assets/busstop.png');
 
 export default {
   name: 'StopSelectionFromMap',
-  components: { IconButton },
+  components: { PreFetcher, IconButton },
   data() {
     return {
       shown: false,
       currentLocation: undefined,
+      zoom: 11,
       markerOptions: {
         url: mapMarker,
         scaledSize: {
-          width: 30, height: 32, f: 'px', b: 'px',
+          width: 30,
+          height: 32,
+          f: 'px',
+          b: 'px',
         },
       },
       infoOptions: {
@@ -47,11 +51,25 @@ export default {
           height: -30,
         },
       },
+      mapBounds: undefined,
     };
   },
-  props: {
-    stops: {
-      type: Array,
+  computed: {
+    stops() {
+      return this.$store.getters.getStops;
+    },
+    stopsInView() {
+      if (this.mapBounds === undefined || this.stops === undefined) {
+        return [];
+      }
+      const result = [];
+      const rectangle = this.reduceRectangle(this.mapBounds);
+      for (const stop of this.stops) {
+        if (this.coordsInRectangle(stop.coords, rectangle)) {
+          result.push(stop);
+        }
+      }
+      return result;
     },
   },
   mounted() {
@@ -63,6 +81,15 @@ export default {
     });
   },
   methods: {
+    saveBounds(bounds) {
+      if (bounds === undefined) return;
+      this.mapBounds = {
+        top: bounds.Ua.j,
+        right: bounds.Ya.j,
+        bottom: bounds.Ua.i,
+        left: bounds.Ya.i,
+      };
+    },
     coordsFromStringToNumber(coords) {
       return {
         lat: Number(coords.lat),
@@ -74,6 +101,26 @@ export default {
     },
     back() {
       this.shown = false;
+    },
+    coordsInRectangle(coords, rect) {
+      return coords.lat > rect.left && coords.lat < rect.right
+        && coords.lng > rect.bottom && coords.lng < rect.top;
+    },
+    reduceRectangle(rectangle) {
+      const MAX_RECT_AREA_SIZE = 0.01;
+      const width = rectangle.right - rectangle.left;
+      const height = rectangle.top - rectangle.bottom;
+      const area = width * height;
+      const result = Object.assign({}, rectangle);
+      if (area > MAX_RECT_AREA_SIZE) {
+        const newWidth = width * MAX_RECT_AREA_SIZE / area;
+        const newHeight = height * MAX_RECT_AREA_SIZE / area;
+        result.left += (width - newWidth) / 2;
+        result.right -= (width - newWidth) / 2;
+        result.top -= (height - newHeight) / 2;
+        result.bottom += (height - newHeight) / 2;
+      }
+      return result;
     },
   },
 };
@@ -98,8 +145,14 @@ export default {
     justify-content: center;
   }
 
+  .condition-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
   .stop-selection-map-back-button-div {
-    height: 50px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -108,6 +161,8 @@ export default {
 
   .stop-selection-map-back-button {
     cursor: pointer;
+    height: 25px !important;
+    width: 35px !important;
   }
 
   .gm-ui-hover-effect {

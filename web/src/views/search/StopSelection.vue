@@ -4,7 +4,7 @@
     <div class="dialog" :class="{'dialog-hidden': !dialogShown}">
       <ViewBody :tight="true" :paddingTop="false">
         <div class="header">
-          <Input placeholder="Odkiaľ" v-model="searchValue"/>
+          <Input placeholder="Odkiaľ" v-model="searchValue" ref="input"/>
           <div class="header-icons">
             <img src="/assets/current-location.png" alt="current-location" class="header-icon"
                  v-if="currentLocationOption" @click="pickCurrentLocation"/>
@@ -22,16 +22,18 @@
         </div>
       </ViewBody>
     </div>
-    <StopSelectionFromMap :stops="stops" ref="stopSelectionFromMap"
+    <StopSelectionFromMap ref="stopSelectionFromMap"
                           @change="locationPickedFromMap($event)"/>
   </div>
 </template>
 
 <script>
+import config from '../../config';
 import Input from '../../components/inputs/Input.vue';
 import StopListCell from './StopListCell.vue';
 import StopSelectionFromMap from './StopSelectionFromMap.vue';
 import ViewBody from '../../components/containers/ViewBody.vue';
+import akcentHelper from '../../js/akcentHelper';
 
 export default {
   name: 'StopSelection',
@@ -68,27 +70,37 @@ export default {
   },
   computed: {
     stops() {
-      return this.$store.getters.getStops;
+      return this.$store.getters.getStopAreas;
     },
     filteredStops() {
       if (this.stops === undefined) {
         return [];
       }
-      return this.stops.filter(s => s.name.name.toLowerCase().includes(this.searchValue.trim()));
+      return this.stops.filter(s => akcentHelper.deleteAkcent(s.name.name.toLowerCase())
+        .includes(akcentHelper.deleteAkcent(this.searchValue.toLowerCase().trim())));
     },
   },
   methods: {
     showDialog() {
       this.dialogShown = true;
+      setTimeout(() => {
+        this.$refs.input.$refs.input.focus();
+      }, 100);
     },
     hideDialog() {
       this.dialogShown = false;
     },
     stopSelected(stop) {
+      this.searchValue = '';
       this.hideDialog();
       this.$emit('input', stop);
     },
     pickCurrentLocation() {
+      if (config.useDefaultCurrentLocation) {
+        this.$emit('input', { coords: config.defaultCurrentLocation });
+        this.hideDialog();
+        return;
+      }
       navigator.geolocation.getCurrentPosition((position) => {
         const currentLocation = {
           lat: position.coords.latitude,
@@ -103,8 +115,10 @@ export default {
     pickLocationFromMap() {
       this.$refs.stopSelectionFromMap.shown = true;
     },
-    locationPickedFromMap(stop) {
+    locationPickedFromMap(stopArea) {
       this.$refs.stopSelectionFromMap.shown = false;
+      const stop = stopArea;
+      stop.id = stopArea.stopArea.id;
       this.$emit('input', stop);
       this.hideDialog();
     },
