@@ -95,6 +95,7 @@ public class ImportService {
     importStopTimes(trips);
     stopTime = System.nanoTime();
     System.out.println("StopTimes imported in " + (stopTime - startTime) + " seconds");
+    System.out.println("Data successfully imported to database");
 
     return new ResponseEntity<>(HttpStatus.OK);
   }
