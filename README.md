@@ -18,8 +18,7 @@ Dátová štruktúra musí byť vždy aktuálna a inicializuje sa pri spustení 
 Na inicializáciu potrebuje maž definovanú cestu k súborom statických cestovných poriadkov a dát o meškaní. 
 Cesty sú definované v súbore `/src/main/resources/application.properties`. 
 
-`realtime-data-resources-pattern=classpath:delays/`
-
+`realtime-data-resources-pattern=classpath:delays/`<br/>
 `data-resources-pattern=classpath:data/`
 
 ### Dátová štrutúra
@@ -32,9 +31,11 @@ V projekte je už serializovaná dátová štruktúra pre dáta statických cest
 Ďalej treba na serveri vytvoriť PostgreSQL databázu a naplniť ju dátami zo súborov. 
 Do databázy sa ukladajú statické dáta pre aplikáciu. 
 Predvolený názov databázy, používateľ a heslo do databázy je nastavené v `application.properties`.
-`spring.datasource.url=jdbc:postgresql://localhost:5432/mhdBa`
-`spring.datasource.username=postgres`
-`spring.datasource.password=postgres`
+
+`spring.datasource.url=jdbc:postgresql://localhost:5432/mhdBa`<br/>
+`spring.datasource.username=postgres`<br/>
+`spring.datasource.password=postgres`<br/>
+
 V `application.properties`  je potrebné mať pred prvotným spustením aplikácie nastavenú vlastnosť aplikácie
 `spring.jpa.hibernate.ddl-auto` na hodnotu `create-drop`. 
 Týmto sa vymažú dáta z databázy a vygeneruje sa schéma databázy.
@@ -44,7 +45,9 @@ Teraz už môžeme spustiť serverovú aplikáciu spustením súboru `Applicatio
 Po tom ako sa vypíše jedna z hlášok 
 *"Data structure successfuly serialized"*
 *"Data structure successfuly deserialized from file"*
-je dátová štruktúra pripravená. Stále však nemáme naplnenú databázu. 
+je dátová štruktúra pripravená. 
+
+Stále však nemáme naplnenú databázu dátami. 
 Je potrebné vtvoriť dopyt na `localhost:{port}/api/import`, ktorý spustí import dát do databázy.
 Import môže trvať viac ako 20 minút. Po vypísaní hlášky 
 *"Data successfully imported to database"* sú v databáze potrebné dáta pre beh aplikácie.
@@ -53,6 +56,7 @@ Hodnotu `spring.jpa.hibernate.ddl-auto` môžeme nastaviť na `validate`, aby ď
 
 ### Spustenie klientskej strany
 Pri prvotnom sputení treba nainštalovať všetky potrebné závislosti príkazom `npm install` (v priečinku `web`).
+
 Po nainštalovaní potrebných závislostí, je spustíme klientskú aplikáciu príkazov `npm run serve --fix`.
 Vypíše sa port, na ktorom aplikácie beží.
 
