@@ -1,4 +1,0 @@
-route_id,agency_id,route_short_name,route_long_name,route_type,route_text_colour
-323,01,3,,0,000000
-6401,01,64,,11,000000
-3905,01,39,,3,000000

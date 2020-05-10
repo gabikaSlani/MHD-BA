@@ -1,6 +1,0 @@
-service_id,date,exception_type
-prac_dni,20180305,2
-prac_dni,20180306,2
-prac_dni,20180307,2
-prac_dni,20180308,2
-prac_dni,20180309,2
