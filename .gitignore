@@ -5,6 +5,7 @@ data-service/target
 web/target
 api/src/main/resources/data
 api/src/main/resources/delays
+!api/src/main/resources/data/foot_paths.txt
 api/src/main/resources/test-data
 api/src/main/resources/test-delays
 api/src/main/resources/application-test.properties
