@@ -1,7 +1,7 @@
 /* eslint no-shadow: ["error", { "allow": ["state"] }] */
 
 const state = {
-  maxNumberOfTransfers: 2,
+  maxNumberOfTransfers: 3,
   maxTimeOfWalking: 8,
   minTimeForTransfer: 1,
   onlyLowFloor: false,
