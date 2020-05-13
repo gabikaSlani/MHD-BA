@@ -1,0 +1,4 @@
+service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+prac_dni,1,1,1,1,1,0,0,20180205,20180311
+volne_dni,0,0,0,0,0,1,1,20180205,20180311
+prazdniny,1,1,1,1,1,0,0,20180305,20180309
