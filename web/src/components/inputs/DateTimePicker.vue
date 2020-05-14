@@ -52,10 +52,10 @@ export default {
     },
     getDisabledMinutes() {
       if (this.$store.getters.getActualDateTime === undefined) return undefined;
-      if (this.sameDay(this.time, this.getActualDateTime)) {
+      if (this.sameDay(this.time, this.getActualDateTime)
+        && this.sameHour(this.time, this.getActualDateTime)) {
         const actualMinute = this.$store.getters.getActualDateTime.minute;
-        return [...Array(actualMinute)
-          .keys()];
+        return [...Array(actualMinute).keys()];
       }
       return [];
     },
@@ -136,6 +136,10 @@ export default {
       return day1.getFullYear() === day2.getFullYear()
         && day1.getMonth() === day2.getMonth()
         && day1.getDate() === day2.getDate();
+    },
+    sameHour(day1, day2) {
+      if (day1 === undefined || day2 === undefined) return false;
+      return day1.getHours() === day2.getHours();
     },
   },
   watch: {

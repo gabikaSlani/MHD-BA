@@ -17,6 +17,8 @@ import com.fmph.diplomovka.services.models.SearchParams;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class PathService {
 
-  private final static int MIN_PATHS_ON_PAGE = 5;
+  @Value("${min-paths-on-page}")
+  private int MIN_PATHS_ON_PAGE;
   private final static String NO_PATHS_MESSAGE =
       "Pre zadané parametre neexistuje žiadna cesta. Skúste upraviť parametre.";
   private final static String NO_STOPS_AROUND_LOCATION_MESSAGE =

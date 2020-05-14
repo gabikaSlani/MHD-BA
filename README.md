@@ -58,3 +58,8 @@ Pri prvotnom sputení treba nainštalovať všetky potrebné závislosti príkaz
 Po nainštalovaní potrebných závislostí, je spustíme klientskú aplikáciu príkazom `npm run serve --fix`.
 Vypíše sa port, na ktorom aplikácie beží.
 
+###Testovacie dáta
+Keďže v projekte sú priložené iba testovacie GTFS dáta, 
+vyhľadávanie funguje obmedzenie od 5.2.2018 - 11.3.2018. 
+Jednotlivé linky jazdia približne od 5:00 do 7:00. 
+
