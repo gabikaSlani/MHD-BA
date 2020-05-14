@@ -3,11 +3,12 @@
 Aplikácia MHD-BA slúži na plánovanie ciest v MHD Bratislava. 
 Pri hľadaní ciest prihliada na meškanie vozidiel a používateľské preferencie a ponúka používateľom alternatívne cesty.
 
-## Intalačná príručka
-
 Aplikácia potrebuje pre svoj beh dáta statických cestovných poriadkov vo formáte GTFS a dáta o meškaní vozidiel.
-Tieto dáta je potrebné vložiť do priečinka `api/src/main/resources`. 
-Tu sú vložené testovacie dáta v priečinku `/test-data` a `test-delays`.
+Dáta od Dopravného podniku Bratislava, ktoré sme používali pri implementácii sú chránené licenciou. 
+V projekte sú priložené testovacie dáta, s ktorými aplikácia funguje obmedzene. 
+
+## Spustenie aplikácie
+Pre spustenie aplikácie je potrebné mať `Apache Maven`, `JDK 11+` a `npm`, ktoré je distribuované s `Node.js`. 
 
 Po naklonovaní projektu je potrebné spustiť príkaz
 `mvn clean install`, aby sa vygenerovali všetky potrebné triedy definované v súbore `contract.yaml`.
@@ -41,7 +42,7 @@ Týmto sa vymažú dáta z databázy (ak tam nejaké sú) a vygeneruje sa schém
 ### Spustenie serverovej aplikácie
 Teraz už môžeme spustiť serverovú aplikáciu spustením súboru `Application.java` s profilom `test`. 
 Po tom ako sa vypíše jedna z hlášok 
-*"Data structure successfuly serialized"*
+*"Data structure successfuly serialized"* alebo 
 *"Data structure successfuly deserialized from file"*
 je dátová štruktúra pripravená. 
 
