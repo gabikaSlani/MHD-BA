@@ -12,9 +12,6 @@ export default {
     updateValue(value) {
       this.$emit('input', value);
     },
-    changeValue(value) {
-      console.log(value);
-    },
   },
 };
 </script>
