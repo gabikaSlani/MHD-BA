@@ -7,7 +7,7 @@ Aplikácia potrebuje pre svoj beh dáta statických cestovných poriadkov vo for
 Dáta od Dopravného podniku Bratislava, ktoré sme používali pri implementácii sú chránené licenciou. 
 V projekte sú priložené testovacie dáta, s ktorými aplikácia funguje obmedzene. 
 
-## Spustenie aplikácie
+## Spustenie aplikácie lokálne
 Pre spustenie aplikácie je potrebné mať `Apache Maven`, `JDK 11+` a `npm`, ktoré je distribuované s `Node.js`. 
 
 Po naklonovaní projektu je potrebné spustiť príkaz
@@ -59,8 +59,7 @@ Pri prvotnom sputení treba nainštalovať všetky potrebné závislosti príkaz
 Po nainštalovaní potrebných závislostí, je spustíme klientskú aplikáciu príkazom `npm run serve --fix`.
 Vypíše sa port, na ktorom aplikácie beží.
 
-###Testovacie dáta
-Keďže v projekte sú priložené iba testovacie GTFS dáta, 
-vyhľadávanie funguje obmedzenie od 5.2.2018 - 11.3.2018. 
-Jednotlivé linky jazdia približne od 5:00 do 7:00. 
+### Vyhľadávanie ciest
+Keďže v projekte sú priložené iba testovacie GTFS dáta, vyhľadávanie funguje obmedzenie od 5.2.2018 - 11.3.2018. 
+Jednotlivé linky jazdia približne od 5:00 do 7:00. s
 
