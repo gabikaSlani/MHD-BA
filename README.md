@@ -1,10 +1,13 @@
 # MHD BA
 
-Aplikácia MHD-BA slúži na plánovanie ciest v MHD Bratislava. 
+Aplikácia MHD-BA je súčasťou diplomovej práce na Fakulte matematiky, fyziky a informatiky UK
+(oficiálna stránka diplomovej práce: https://gabikaslani.github.io/diploma-thesis/).
+
+Aplikácia slúži na plánovanie ciest v MHD Bratislava. 
 Pri hľadaní ciest prihliada na meškanie vozidiel a používateľské preferencie a ponúka používateľom alternatívne cesty.
 
 Aplikácia potrebuje pre svoj beh dáta statických cestovných poriadkov vo formáte GTFS a dáta o meškaní vozidiel.
-Dáta od Dopravného podniku Bratislava, ktoré sme používali pri implementácii sú chránené licenciou. 
+Dáta od Dopravného podniku Bratislava, ktoré sme používali kpri implementácii sú chránené licenciou. 
 V projekte sú priložené testovacie dáta, s ktorými aplikácia funguje obmedzene. 
 
 ## Spustenie aplikácie lokálne
