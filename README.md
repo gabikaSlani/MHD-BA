@@ -1,6 +1,6 @@
 # MHD BA
 
-Aplikácia MHD-BA je súčasťou diplomovej práce na Fakulte matematiky, fyziky a informatiky UK
+Progresívna webová aplikácia MHD-BA je súčasťou diplomovej práce na Fakulte matematiky, fyziky a informatiky UK
 (oficiálna stránka diplomovej práce: https://gabikaslani.github.io/diploma-thesis/).
 
 Aplikácia slúži na plánovanie ciest v MHD Bratislava. 
